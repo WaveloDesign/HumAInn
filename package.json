@@ -1,0 +1,8 @@
+{
+  "name": "humain",
+  "version": "1.0.0",
+  "description": "humAIn - AI Text Humanizer",
+  "dependencies": {
+    "google-auth-library": "^9.0.0"
+  }
+}
