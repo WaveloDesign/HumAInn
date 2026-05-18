@@ -861,24 +861,13 @@ ${sample}`;
 Κείμενο:
 ${sample}`;
 
-    const [r1,r2,r3]=await Promise.all([
-      apiCall([{role:'user',content:prompt1}],250),
-      apiCall([{role:'user',content:prompt2}],250),
-      apiCall([{role:'user',content:prompt3}],250)
-    ]);
+    const result=await geminiProxy('analyze',{text:sample});
+    const finalScore=Math.round(local.pct*0.2+result.ai_score*0.8);
+    const allSignals=result.top_signals||[];
+    const reason=result.reason||'';
+    const verdict=result.verdict||'';
 
-    const parse=(raw)=>{ try{ return JSON.parse(raw.replace(/```json|```/g,'').trim()); }catch(e){ return null; } };
-    const j1=parse(r1), j2=parse(r2), j3=parse(r3);
-    const valid=[j1,j2,j3].filter(Boolean);
-    if(!valid.length) throw new Error('parse fail');
-
-    const avgScore=Math.round(valid.reduce((s,j)=>s+j.score,0)/valid.length);
-    const finalScore=Math.round(local.pct*0.2 + avgScore*0.8);
-    const allSignals=[...new Set(valid.flatMap(j=>j.signals||[]))].slice(0,4);
-    const reason=valid[0].reason||'';
-    const verdict=finalScore>=70?'Πιθανώς AI':finalScore>=40?'Μικτό ή AI-βοηθούμενο':'Πιθανώς ανθρώπινο';
-
-    renderAnalysis(local,{ai_score:finalScore,verdict,reason,top_signals:allSignals,ensemble:valid.map(j=>j.score)});
+    renderAnalysis(local,{ai_score:finalScore,verdict,reason,top_signals:allSignals});
   } catch(e){
     const msg=e.message==='NO_KEY'?'Προσθήκη API key':'API error: '+e.message;
     renderAnalysis(local,{ai_score:local.pct,verdict:'Στατιστική εκτίμηση',reason:msg,top_signals:[]});
@@ -932,7 +921,7 @@ function renderAnalysis(r, aiResult){
     ensembleHtml=`<div style="font-size:10px;color:var(--muted2);margin-top:6px;font-family:'DM Mono',monospace">3 αναλύσεις: ${aiResult.ensemble.map(s=>`<span style="color:${s>=70?'#f87171':s>=40?'#fbbf24':'#34d399'}">${s}%</span>`).join(' · ')} → μέσος: <strong style="color:var(--accent2)">${aiResult.ai_score}%</strong></div>`;
   }
   const scoreNote = aiResult
-    ? `<div style="margin-top:6px">${ensembleHtml}<div style="font-size:10px;color:var(--muted2);font-family:'DM Mono',monospace">80% AI · 20% στατιστικά</div></div>`
+    ? `<div style="margin-top:6px">${ensembleHtml}<div style="font-size:10px;color:var(--muted2);font-family:'DM Mono',monospace">80% Gemini AI · 20% στατιστικά</div></div>`
     : `<div style="font-size:10px;color:var(--muted2);margin-top:4px;font-family:'DM Mono',monospace">Αναλύω με 3 παράλληλα AI calls...</div>`;
   const existingNote=document.querySelector('.score-note');
   if(existingNote){ existingNote.innerHTML=scoreNote; }
@@ -1081,7 +1070,7 @@ ${after.substring(0,1200)}`}]
   const diffColor=diff>10?'#34d399':diff>0?'#fbbf24':'#f87171';
   document.getElementById('changesSummary').innerHTML=
     `AI score: <strong style="color:#f87171">${bScore}%</strong> → <strong style="color:${diffColor}">${aFinal}%</strong>${diff>0?' <span style="color:#34d399">(μείωση '+diff+'%)</span>':''}<br>`+
-    `<span style="color:var(--muted2);font-size:12px;font-family:'DM Mono',monospace">Score: 70% Claude AI ανάλυση + 30% στατιστικά</span>`;
+    `<span style="color:var(--muted2);font-size:12px;font-family:'DM Mono',monospace">Score: 80% Gemini AI ανάλυση + 20% στατιστικά</span>`;
 }
 
 function splitSentences(text){
