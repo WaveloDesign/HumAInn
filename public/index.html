@@ -223,7 +223,7 @@ async function gm(prompt, maxT){
   maxT=maxT||400;
   var key=getKey();
   if(!key) throw new Error('NO_KEY');
-  var r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+key,{
+  var r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key='+key,{
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:maxT,temperature:0.5}})
