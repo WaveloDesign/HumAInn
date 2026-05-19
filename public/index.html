@@ -316,8 +316,17 @@ async function doAnalysis(){
   try{
     const clean=raw.replace(/```json|```/g,'').trim();
     const match=clean.match(/\{[\s\S]*\}/);
-    return match?JSON.parse(match[0]):null;
-  }catch{return null;}
+    if(!match) return null;
+    // Fix multiline strings inside JSON
+    const fixed=match[0].replace(/"([^"]*?)"/gs,(m,p1)=>'"'+p1.replace(/\n/g,' ').replace(/\r/g,'')+'"');
+    return JSON.parse(fixed);
+  }catch(e){
+    // Last resort: extract score manually
+    const scoreMatch=raw.match(/"score"\s*:\s*(\d+)/);
+    const reasonMatch=raw.match(/"reason"\s*:\s*"([^"]+)"/s);
+    if(scoreMatch) return {score:parseInt(scoreMatch[1]),signals:[],reason:reasonMatch?reasonMatch[1].replace(/\n/g,' '):''};
+    return null;
+  }
 };
     const results=[r1,r2,r3].map(parse).filter(Boolean);
     if(!results.length) throw new Error('parse fail');
