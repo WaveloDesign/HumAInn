@@ -314,17 +314,20 @@ async function doAnalysis(){
     ]);
     const parse=raw=>{
   try{
-    const clean=raw.replace(/```json|```/g,'').trim();
-    const match=clean.match(/\{[\s\S]*\}/);
-    if(!match) return null;
-    // Fix multiline strings inside JSON
-    const fixed=match[0].replace(/"([^"]*?)"/gs,(m,p1)=>'"'+p1.replace(/\n/g,' ').replace(/\r/g,'')+'"');
-    return JSON.parse(fixed);
+    let s=raw.replace(/```json|```/g,'').trim();
+    s=s.replace(/\n|\r/g,' ');
+    const m=s.match(/\{.+\}/);
+    if(!m) return null;
+    return JSON.parse(m[0]);
   }catch(e){
-    // Last resort: extract score manually
-    const scoreMatch=raw.match(/"score"\s*:\s*(\d+)/);
-    const reasonMatch=raw.match(/"reason"\s*:\s*"([^"]+)"/s);
-    if(scoreMatch) return {score:parseInt(scoreMatch[1]),signals:[],reason:reasonMatch?reasonMatch[1].replace(/\n/g,' '):''};
+    const sc=(raw.match(/"score"\s*:\s*(\d+)/)||[])[1];
+    if(!sc) return null;
+    const re=((raw.match(/"reason"\s*:\s*"([^"]{1,300})"/))||[])[1]||'';
+    const sigs=[];raw.replace(/"signals"\s*:\s*\[([^\]]+)\]/,(_,x)=>x.replace(/"([^"]+)"/g,(__,s)=>sigs.push(s)));
+    return{score:parseInt(sc),signals:sigs,reason:re.replace(/\n/g,' ')};
+  }
+}
+    }catch(e2){}
     return null;
   }
 };
