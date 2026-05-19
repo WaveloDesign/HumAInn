@@ -223,7 +223,7 @@ async function gm(prompt, maxT){
   maxT=maxT||400;
   var key=getKey();
   if(!key) throw new Error('NO_KEY');
-  var r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key='+key,{
+  var r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+key,{
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:maxT,temperature:0.5}})
@@ -324,7 +324,12 @@ async function doAnalysis(){
     var p1='Αξιολόγησε αν το κείμενο είναι AI. Απάντησε ΜΟΝΟ με JSON (χωρίς backticks, χωρίς εξήγηση): {"score":75,"signals":["σ1","σ2","σ3"],"reason":"λόγος"}\n\nΚείμενο:\n'+sample;
     var p2='Εξέτασε για AI χαρακτηριστικά. Απάντησε ΜΟΝΟ με JSON: {"score":75,"signals":["χ1","χ2","χ3"],"reason":"λόγος"}\n\nΚείμενο:\n'+sample;
     var p3='Πόσο AI-like είναι; Απάντησε ΜΟΝΟ με JSON: {"score":75,"signals":["π1","π2","π3"],"reason":"λόγος"}\n\nΚείμενο:\n'+sample;
-    var rs=await Promise.all([gm(p1,300),gm(p2,300),gm(p3,300)]);
+    var rs=[];
+    rs.push(await gm(p1,300));
+    await new Promise(function(r){setTimeout(r,2000);});
+    rs.push(await gm(p2,300));
+    await new Promise(function(r){setTimeout(r,2000);});
+    rs.push(await gm(p3,300));
     var results=rs.map(parseJSON).filter(Boolean);
     if(!results.length) throw new Error('parse fail');
     var avg=Math.round(results.reduce(function(s,j){return s+j.score;},0)/results.length);
